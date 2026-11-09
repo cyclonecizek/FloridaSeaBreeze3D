@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Florida east coast sea breeze, 3D trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E6EDEC; --panel:#F3F6F5; --raise:#FFFFFF; --ink:#15252C; --ink-2:#4B5D64; --line:#C3CFCE;
+  --marine:#0E7C86; --heat:#BF5F12; --front:#1E4FA3; --gulf:#1F8A5B; --storm:#56626B;
+  --body:"Sofia Sans","Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;
+  --cond:"Sofia Sans Condensed","Sofia Sans","Arial Narrow","Segoe UI",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0D1A20; --panel:#12232B; --raise:#182D36; --ink:#E4ECEB; --ink-2:#9BAFB2; --line:#28414B;
+    --marine:#55CBD1; --heat:#F0A04B; --front:#86AEF5; --gulf:#62D4A0; --storm:#97A5AD;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0D1A20; --panel:#12232B; --raise:#182D36; --ink:#E4ECEB; --ink-2:#9BAFB2; --line:#28414B;
+  --marine:#55CBD1; --heat:#F0A04B; --front:#86AEF5; --gulf:#62D4A0; --storm:#97A5AD;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--front);outline-offset:2px}
+
+.app{display:flex;flex-direction:column;min-height:100%}
+.head{padding:14px 18px 10px}
+.head h1{font-family:var(--cond);font-weight:700;font-size:1.75rem;line-height:1.05;margin:0;letter-spacing:.005em}
+.head p{margin:4px 0 0;color:var(--ink-2);max-width:62ch}
+
+.stage{position:relative;height:62vh;min-height:360px;background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.clock{position:absolute;left:16px;top:12px;pointer-events:none}
+.clock .t{font-family:var(--cond);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.clock .z{font-family:var(--cond);font-weight:500;font-size:1.05rem;color:var(--ink-2);font-variant-numeric:tabular-nums;margin-left:8px}
+.clock .ph{font-weight:600;margin-top:4px;max-width:30ch}
+.views{position:absolute;right:12px;top:12px;display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.views button{border:0;background:transparent;padding:7px 12px;cursor:pointer;font-weight:500}
+.views button + button{border-left:1px solid var(--line)}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.legend{position:absolute;left:16px;bottom:12px;font-size:.84rem;color:var(--ink-2);pointer-events:none;display:grid;gap:3px}
+.legend span{display:flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:22px;height:3px;border-radius:2px}
+.legend i.blk{height:10px;opacity:.45}
+.hint{position:absolute;right:14px;bottom:12px;font-size:.84rem;color:var(--ink-2);pointer-events:none;text-align:right}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center}
+
+.transport{padding:10px 18px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px}
+.play{flex:none;width:92px;padding:9px 0;border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:6px;font-weight:600;cursor:pointer}
+.speed{flex:none;border:1px solid var(--line);background:var(--raise);border-radius:6px;padding:8px 6px}
+.track{flex:1;min-width:0;position:relative;padding-top:24px}
+.track input[type=range]{width:100%;margin:0;accent-color:var(--front);display:block}
+.flags{position:absolute;left:8px;right:8px;top:0;height:24px}
+.flags button{position:absolute;transform:translateX(-50%);top:0;border:0;background:none;padding:0 4px;font-family:var(--cond);font-weight:600;font-size:.95rem;color:var(--front);cursor:pointer;white-space:nowrap}
+.flags button::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:7px;background:var(--front)}
+.hours{position:relative;height:18px;margin:2px 8px 0;font-family:var(--cond);font-size:.9rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.hours span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.layers{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px}
+.layers label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.layers input{accent-color:var(--front);width:16px;height:16px;margin:0}
+
+.brief{padding:16px 18px 28px;background:var(--panel)}
+.brief h2{font-family:var(--cond);font-weight:700;font-size:1.3rem;line-height:1.15;margin:0 0 6px}
+.brief h3{font-weight:600;font-size:.95rem;margin:16px 0 6px;color:var(--ink-2)}
+.regime{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--raise)}
+.regime button{border:0;background:transparent;padding:8px 6px;cursor:pointer;font-weight:600;line-height:1.2}
+.regime button small{display:block;font-weight:400;color:var(--ink-2);font-size:.82rem}
+.regime button + button{border-left:1px solid var(--line)}
+.regime button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.regime button[aria-pressed="true"] small{color:inherit;opacity:.8}
+.regnote{margin:8px 0 0;color:var(--ink-2)}
+.phase{margin-top:18px;padding-top:14px;border-top:2px solid var(--ink)}
+.phase p{margin:0;max-width:60ch}
+.phase ul{margin:0;padding-left:18px;max-width:60ch}
+.phase li{margin:3px 0}
+.read{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin:0}
+.read div{padding:7px 0;border-bottom:1px solid var(--line)}
+.read dt{color:var(--ink-2);font-size:.86rem}
+.read dd{margin:0;font-family:var(--cond);font-weight:600;font-size:1.25rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.trace canvas{display:block;width:100%;height:170px}
+.tkey{display:flex;gap:16px;font-size:.86rem;color:var(--ink-2);margin-top:4px;flex-wrap:wrap}
+.tkey i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.fine{margin-top:18px;color:var(--ink-2);font-size:.86rem;max-width:60ch}
+
+@media (min-width:980px){
+  body{overflow:hidden}
+  .app{display:grid;grid-template-columns:minmax(0,1fr) 384px;grid-template-rows:auto minmax(0,1fr) auto;height:100%;min-height:0}
+  .head{grid-column:1;grid-row:1}
+  .stage{grid-column:1;grid-row:2;height:auto;min-height:0}
+  .transport{grid-column:1;grid-row:3;border-bottom:0}
+  .brief{grid-column:2;grid-row:1 / span 3;overflow-y:auto;border-left:1px solid var(--line)}
+}
+@media (max-width:560px){
+  .clock .t{font-size:1.7rem}
+  .clock .z{display:block;margin:2px 0 0}
+  .row{flex-wrap:wrap}
+  .track{order:-1;flex-basis:100%}
+  .play{flex:1}
+  .hours span:nth-child(even){display:none}
+  .stage{height:56vh}
+  .hint{display:none}
+  .views button{padding:7px 9px}
+  .legend{font-size:.78rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head">
+    <h1>Florida east coast sea breeze</h1>
+    <p>An idealized summer day from 7 AM to 8 PM, drawn as a block diagram from 15 miles offshore to 50 miles inland.</p>
+  </header>
+
+  <section class="stage" id="stage" aria-label="3D view of the sea breeze circulation">
+    <canvas id="gl"></canvas>
+    <div class="clock" aria-live="off">
+      <div><span class="t" id="clk">7:00 AM</span><span class="z" id="zulu">EDT, 1100Z</span></div>
+      <div class="ph" id="phShort"></div>
+    </div>
+    <div class="views" role="group" aria-label="Camera view">
+      <button type="button" data-view="3d" aria-pressed="true">3D</button>
+      <button type="button" data-view="xs" aria-pressed="false">Cross-section</button>
+      <button type="button" data-view="map" aria-pressed="false">Map</button>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--marine)"></i>Onshore wind</span>
+      <span><i style="background:var(--heat)"></i>Offshore wind and return flow</span>
+      <span><i class="blk" style="background:var(--marine)"></i>Atlantic marine air</span>
+      <span><i class="blk" style="background:var(--gulf)"></i>Gulf marine air</span>
+      <span>Heights stretched 4× for visibility</span>
+    </div>
+    <div class="hint">Drag to rotate, scroll or pinch to zoom, right-drag to pan</div>
+  </section>
+
+  <section class="transport" aria-label="Time controls">
+    <div class="row">
+      <button type="button" class="play" id="play">Pause</button>
+      <div class="track">
+        <div class="flags" id="flags"></div>
+        <input type="range" id="time" min="420" max="1200" step="5" value="420" aria-label="Time of day">
+        <div class="hours" id="hours"></div>
+      </div>
+      <select class="speed" id="speed" aria-label="Playback speed">
+        <option value="0.5">0.5×</option>
+        <option value="1" selected>1×</option>
+        <option value="2">2×</option>
+      </select>
+    </div>
+    <div class="layers">
+      <label><input type="checkbox" id="lyWind" checked>Wind tracers</label>
+      <label><input type="checkbox" id="lyAir" checked>Marine air</label>
+      <label><input type="checkbox" id="lyCloud" checked>Clouds</label>
+      <label><input type="checkbox" id="lyTemp" checked>Surface temperature</label>
+    </div>
+  </section>
+
+  <aside class="brief">
+    <h2>Background flow</h2>
+    <div class="regime" role="group" aria-label="Background flow regime">
+      <button type="button" data-reg="light" aria-pressed="true">Light<small>under 5 kt</small></button>
+      <button type="button" data-reg="offshore" aria-pressed="false">Offshore<small>W–SW 8 kt</small></button>
+      <button type="button" data-reg="onshore" aria-pressed="false">Onshore<small>E–SE 8 kt</small></button>
+    </div>
+    <p class="regnote" id="regNote"></p>
+
+    <div class="phase">
+      <h2 id="phName"></h2>
+      <p id="phBody"></p>
+      <h3>What to look for</h3>
+      <ul id="phCues"></ul>
+    </div>
+
+    <h3>Right now</h3>
+    <dl class="read">
+      <div><dt>Inland temperature</dt><dd id="rT">–</dd></div>
+      <div><dt>Land minus sea (83°F)</dt><dd id="rDT">–</dd></div>
+      <div><dt>Sea breeze front</dt><dd id="rFront">–</dd></div>
+      <div><dt>Front speed</dt><dd id="rSpd">–</dd></div>
+      <div><dt>Wind at the beach</dt><dd id="rWind">–</dd></div>
+      <div><dt>Inflow depth</dt><dd id="rDepth">–</dd></div>
+      <div><dt>Tallest cloud tops</dt><dd id="rTops">–</dd></div>
+      <div><dt>Cloud base</dt><dd id="rBase">–</dd></div>
+    </dl>
+
+    <div class="trace">
+      <h3>Station 5 miles inland</h3>
+      <canvas id="met" aria-label="Temperature and onshore wind at a station 5 miles inland through the day"></canvas>
+      <div class="tkey">
+        <span><i style="background:var(--heat)"></i>Temperature (°F)</span>
+        <span><i style="background:var(--marine)"></i>Onshore wind (kt)</span>
+      </div>
+    </div>
+
+    <p class="fine">This is a conceptual model, not a forecast. Timing, speeds and depths are typical values for east-central Florida in June through September and vary from day to day with the gradient wind, moisture and morning cloud cover.</p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ---------- helpers ---------- */
+var XI_MIN=-24, XI_MAX=80.5, ZC_MIN=-25, ZC_MAX=25, VEX=4;
+var KT=0.539957, MI=0.621371, SST=28.5, STATION=8.05;
+function clamp(x,a,b){return x<a?a:(x>b?b:x);}
+function ss(x){x=clamp(x,0,1);return x*x*(3-2*x);}
+function keys(k,t){
+  if(t<=k[0][0])return k[0][1];
+  for(var i=1;i<k.length;i++){ if(t<=k[i][0]){var a=k[i-1],b=k[i];return a[1]+(b[1]-a[1])*(t-a[0])/(b[0]-a[0]);} }
+  return k[k.length-1][1];
+}
+function F(c){return c*1.8+32;}
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function fmtTime(t){var m=Math.round(t*60),h=Math.floor(m/60),mm=m%60,ap=h>=12?"PM":"AM",h12=h%12||12;return h12+":"+(mm<10?"0":"")+mm+" "+ap;}
+function fmtZ(t){var m=Math.round(t*60)+240,h=Math.floor(m/60)%24,mm=m%60;return (h<10?"0":"")+h+(mm<10?"0":"")+mm+"Z";}
+var COMPASS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+
+/* ---------- conceptual model ---------- */
+var TLAND=[[7,24.5],[9,27.6],[10,29.4],[12,31.9],[14,33.2],[15.5,33.6],[17,32.8],[19,30.6],[20,29.2]];
+var ZI=[[7,0.15],[9,0.4],[11,0.9],[13,1.3],[15.5,1.6],[18,1.5],[20,0.8]];
+var HEAT=[[7,0],[8.5,0.2],[10,0.7],[12,1],[16,1],[18.5,0.4],[20,0.05]];
+var LCL=[[7,0.5],[10,0.8],[13,1.05],[16,1.2],[20,1.0]];
+var CU=[[9.3,0],[11,1],[17.5,1],[19.5,0]];
+
+var REG={
+  light:{bg:0,onset:10,c:6.4,p:1.15,delta:3,hMax:0.8,shear:0,
+    A:[[0,0],[0.5,9],[2,15],[5.5,21],[7.5,19],[9,12],[10,8]],
+    wcsb:{enter:15.5,speed:9},
+    D:[[10,0],[10.5,0.8],[12,2.2],[14,4.5],[15.5,8],[16.5,11],[17.4,13],[18.6,13.5],[19.3,10],[20,7]],
+    Dw:[[15.5,7],[17.4,11],[18.6,13],[20,7]],
+    note:"With almost no gradient wind, both coasts’ sea breezes march inland and meet over the interior late in the afternoon."},
+  offshore:{bg:-15,onset:11.5,c:3.2,p:0.9,delta:2,hMax:1.0,shear:1,
+    A:[[0,0],[0.5,14],[2,22],[4,26],[6,22],[8,12],[9,9]],
+    wcsb:{enter:13,speed:16},
+    D:[[11.5,0],[12,1.2],[13.5,4],[15,7.5],[16,11],[17.1,13.5],[18.5,14],[19.3,10],[20,7]],
+    Dw:[[13,5],[15,8],[17.1,12],[18.5,13],[20,7]],
+    note:"Westerly flow delays the sea breeze, sharpens its front and pins it near the coast, then delivers the Gulf breeze to meet it. This is the active thunderstorm pattern for the east coast."},
+  onshore:{bg:15,onset:9.5,c:13,p:1,delta:8,hMax:0.5,shear:0,
+    A:[[0,0],[1,5],[4,9],[8,7],[10.5,4]],
+    wcsb:null,
+    D:[[9.5,0],[10.5,0.8],[12,2],[14,3.6],[15.7,4.2],[20,3]],
+    Dw:[[0,0]],
+    note:"Easterly flow carries a weak, diffuse sea breeze inland early and fast. Afternoon storms end up over the western half of the peninsula."}
+};
+/* find collision time and place for regimes that have one */
+Object.keys(REG).forEach(function(k){
+  var R=REG[k];R.tc=null;R.xc=null;
+  if(R.wcsb){
+    for(var t=Math.max(R.onset,R.wcsb.enter);t<=20;t+=0.005){
+      var xf=R.c*Math.pow(t-R.onset,R.p), xw=XI_MAX-R.wcsb.speed*(t-R.wcsb.enter);
+      if(xf>=xw){R.tc=t;R.xc=(xf+xw)/2;break;}
+    }
+  }
+  R.exit=R.onset+Math.pow(XI_MAX/R.c,1/R.p);
+});
+
+function lobe(zc){return Math.sin(0.31*zc+1.3)+0.6*Math.sin(0.83*zc+0.4);}
+function lobeW(zc){return Math.sin(0.27*zc+2.9)+0.5*Math.sin(0.71*zc+1.1);}
+
+function stateAt(t,rk){
+  var R=REG[rk], S={t:t,rk:rk,R:R,bg:R.bg,delta:R.delta,dw:3,hw:0.8};
+  S.Tfree=keys(TLAND,t);S.zi=keys(ZI,t);S.heat=keys(HEAT,t);S.lcl=keys(LCL,t);S.cu=keys(CU,t);
+  S.xf=null;S.xw=null;S.collided=false;S.A=0;S.Aw=0;S.h=0.4;S.Xo=6;S.veer=0;
+  var tau=t-R.onset;
+  if(tau>=0){
+    S.xf=R.c*Math.pow(tau,R.p);S.A=keys(R.A,tau);S.h=R.hMax*(0.45+0.55*ss(tau/4));
+    S.Xo=6+5*tau;S.veer=40*Math.PI/180*ss(tau/9);
+  }
+  if(R.wcsb&&t>=R.wcsb.enter){S.xw=XI_MAX-R.wcsb.speed*(t-R.wcsb.enter);S.Aw=16*ss((t-R.wcsb.enter)/0.5);}
+  if(R.tc!==null&&t>=R.tc){
+    S.collided=true;S.xf=S.xw=R.xc;
+    var k=Math.max(0.3,1-(t-R.tc)/3);S.A*=k;S.Aw*=k;
+  }
+  S.lobeAmp=S.xf===null?0:1.6*clamp(S.xf/5,0,1)*(rk==="onshore"?1.6:1);
+  S.tanV=Math.tan(S.veer);
+  S.D=S.xf===null?0:keys(R.D,t);
+  S.Dw=S.xw===null?0:keys(R.Dw,t);
+  return S;
+}
+function xfLocal(zc,S){return S.xf+lobe(zc)*S.lobeAmp;}
+function xwLocal(zc,S){return S.collided?S.xw+lobe(zc)*S.lobeAmp:S.xw+lobeW(zc)*2;}
+function Ff(xi,zc,S){
+  if(S.xf===null)return 0;
+  return ss((xfLocal(zc,S)+S.delta*0.5-xi)/S.delta)*ss((xi+S.Xo)/12);
+}
+function Fw(xi,zc,S){
+  if(S.xw===null)return 0;
+  return ss((xi-xwLocal(zc,S)+S.dw*0.5)/S.dw);
+}
+function G(z,h){return z*Math.exp(-z*z/(2*h*h));}
+function Gp(z,h){var r=z/h;return (1-r*r)*Math.exp(-r*r/2);}
+var KTH=2*Math.PI/5;
+/* velocity in km/h: u toward inland (west), w up, v toward north */
+function vel(xi,z,zc,S,o,noThermal){
+  var fe=Ff(xi,zc,S), fw=Fw(xi,zc,S), e=0.4;
+  var u=S.bg, w=0, v=0;
+  if(S.A>0){
+    var gp=Gp(z,S.h), g=G(z,S.h);
+    u+=S.A*fe*gp; v+=S.A*fe*gp*S.tanV;
+    w-=S.A*(Ff(xi+e,zc,S)-Ff(xi-e,zc,S))/(2*e)*g;
+  }
+  if(S.Aw>0){
+    var gpw=Gp(z,S.hw), gw=G(z,S.hw);
+    u-=S.Aw*fw*gpw; v-=S.Aw*fw*gpw*0.3;
+    w+=S.Aw*(Fw(xi+e,zc,S)-Fw(xi-e,zc,S))/(2*e)*gw;
+  }
+  if(!noThermal&&z<S.zi&&xi>4){
+    var dry=(1-fe)*(1-fw)*ss((xi-5)/3)*S.heat*1.6;
+    if(dry>0.01){
+      var ph=KTH*xi+0.9*Math.sin(zc*0.3), a=Math.PI*z/S.zi;
+      u+=dry*(Math.PI/S.zi)*Math.sin(ph)*Math.cos(a);
+      w-=dry*KTH*Math.cos(ph)*Math.sin(a);
+    }
+  }
+  o.u=u;o.w=w;o.v=v;
+}
+function surfT(xi,S){
+  var T=S.Tfree, warm=clamp((S.Tfree-SST)/4,0,1);
+  T-=2.2*Math.exp(-Math.max(xi,0)/60)*warm*Ff(xi,0,S);
+  T-=1.2*Fw(xi,0,S)*warm;
+  if(S.collided){var g=Math.exp(-Math.pow((xi-S.R.xc)/12,2));T-=7*g*ss((S.t-S.R.tc)/0.6);}
+  return T;
+}
+function topE(xi,zc,S){
+  var f=Ff(xi,zc,S); if(f<=0.002)return 0;
+  var d=(xfLocal(zc,S)-xi)/(S.delta*1.6+1.5);
+  return S.h*f*(1+0.75*Math.exp(-(d-0.8)*(d-0.8)));
+}
+function topW(xi,zc,S){
+  var f=Fw(xi,zc,S); if(f<=0.002)return 0;
+  var d=(xi-xwLocal(zc,S))/(S.dw*1.6+1.5);
+  return S.hw*f*(1+0.75*Math.exp(-(d-0.8)*(d-0.8)));
+}
+
+/* ---------- phase text ---------- */
+var PH={
+light:[
+ {t:7,n:"Morning calm",b:"Overnight the land has cooled below the 83°F shelf water. A weak land breeze drifts offshore and the boundary layer over land is shallow and stable.",
+  c:["Calm or light W–NW wind at coastal stations","Overnight showers sit over the Gulf Stream, not over land"]},
+ {t:9.5,n:"Differential heating",b:"The land surface passes the sea-surface temperature. Air over the peninsula warms and expands, pressure falls about a millibar relative to the ocean, and an onshore pressure gradient switches on.",
+  c:["Coastal winds go slack and variable","First flat cumulus over the mainland as thermals reach the LCL"]},
+ {t:10,n:"Initiation at the beaches",b:"Cool marine air starts to undercut the heated land air right at the coastline. The front shows up first on the barrier island, then has to cross the lagoon, so expect a ragged start with lagoon and river breezes adding small convergence lines of their own.",
+  c:["Wind shift to E–ESE at 5 to 8 kt on the beaches","Temperature levels off and dew point rises 2 to 4°F","Thin cumulus line just inland, clearing over the surf zone"]},
+ {t:11.5,n:"Inland penetration",b:"The front behaves as a density current: a raised head about twice the inflow depth, the strongest lift at the leading edge, and a return flow above the marine layer. It advances at roughly half the speed of the onshore wind behind it.",
+  c:["Radar fine line in clear-air mode","Cumulus line on visible imagery with a clear slot behind it","Wind shifts arriving in sequence at stations farther inland"]},
+ {t:14.5,n:"Deep convection on the front",b:"At peak heating the inland air is at its most unstable and frontal lift releases it. Towering cumulus grow into thunderstorms, favored where the front bulges or meets lake and river breezes. Coriolis turning veers the onshore flow toward the southeast.",
+  c:["First lightning 20 to 40 miles inland","Beach winds veering ESE to SE and peaking near 10 to 12 kt","Outflow boundaries spreading away from the first storms"]},
+ {t:REG.light.tc,n:"Collision with the Gulf breeze",b:"The West Coast sea breeze arrives from the west and the two fronts merge over the interior. Opposing low-level inflows are forced upward together, producing the strongest and most widespread convection of the day.",
+  c:["Rapid radar fill-in along a north–south line over the interior","Anvils spreading toward whichever coast the steering flow points to","Outflow boundaries propagating back toward both coasts"]},
+ {t:19,n:"Decay",b:"With the sun low, the land–sea contrast fades and the circulation spins down. Rain-cooled outflow and anvil shading finish the job. After midnight the gradient reverses and a weak land breeze sets up.",
+  c:["Beach winds easing below 5 kt and still veering toward south","Debris cloud and light stratiform rain inland"]}
+],
+offshore:[
+ {t:7,n:"Morning with offshore flow",b:"A westerly gradient wind opposes any onshore push. The east coast often starts clear while morning convection sits near the Gulf coast.",
+  c:["W–SW wind of 5 to 10 kt between 1,000 and 3,000 ft on the morning sounding","The Gulf breeze will be carried east quickly today"]},
+ {t:9.5,n:"Heating with marine air held offshore",b:"The land is warmer than the ocean, but the opposing flow keeps marine air from coming ashore. The contrast keeps building, and coastal highs run several degrees warmer than on light-flow days.",
+  c:["Beaches still reporting W wind and warming fast","Cumulus field over the whole peninsula drifting east"]},
+ {t:11.5,n:"Delayed initiation, sharp front",b:"The pressure gradient finally overcomes the offshore flow. Because the two flows meet head-on, the front is narrow and intense, and it barely moves inland.",
+  c:["Abrupt wind reversal from W to E–SE, sometimes only on the barrier island","Temperature drop of 3 to 6°F with passage","Well-defined radar fine line hugging the coast"]},
+ {t:13,n:"Pinned near the coast",b:"The front creeps only a few miles inland in several hours. Convergence is strong and stays over the same ground, priming the coastal counties. Meanwhile the Gulf breeze, pushed along by the westerlies, is crossing the peninsula.",
+  c:["Towering cumulus along the mainland shore of the lagoon","A line of storms on radar marching east from the interior"]},
+ {t:15.5,n:"Deep convection near the coast",b:"Storms develop on the pinned front and their anvils blow offshore. Westerly steering flow moves cells toward the beaches instead of away from them.",
+  c:["Lightning within a few miles of the coast","New cells firing where outflow meets the sea breeze front"]},
+ {t:REG.offshore.tc,n:"Collision near the east coast",b:"The Gulf breeze and its outflow reach the pinned Atlantic front. The merger happens over the coastal corridor: frequent lightning, wet microbursts and heavy rain, then storms move offshore.",
+  c:["Boundary merger on radar 5 to 15 miles inland","Rain-cooled outflow with a 10 to 15°F temperature drop","Gusty W wind reaching the beaches behind the storms"]},
+ {t:19,n:"Decay",b:"Storms weaken as they move over the cooler shelf water and the land loses its heating. Stratiform rain and anvil debris linger along the coast into the evening.",
+  c:["Lightning retreating offshore","Light W wind and rain-cooled air at coastal stations"]}
+],
+onshore:[
+ {t:7,n:"Morning with onshore flow",b:"Easterly gradient flow already covers the peninsula. Showers that formed over the Atlantic overnight drift ashore and fade.",
+  c:["E wind at the coast from sunrise","Brief coastal showers before 9 AM"]},
+ {t:9.5,n:"Early, diffuse initiation",b:"The sea breeze adds to the existing easterlies instead of reversing the wind. There is no sharp front, only a broad zone where speeds pick up and dew points rise.",
+  c:["No wind shift: look for a 3 to 5 kt increase in speed","Weak or absent radar fine line"]},
+ {t:10.5,n:"Rapid inland penetration",b:"Carried by the background flow, the front moves at 7 to 8 kt and is 15 to 20 miles inland by noon. Convergence along it is weak and the cumulus stay shallow.",
+  c:["Cumulus line racing inland on visible imagery","East coast clearing out by late morning"]},
+ {t:13,n:"Shallow convection heading for the interior",b:"A few showers form as the front reaches warmer, deeper boundary-layer air inland. The east coast stays dry and breezy in stable marine air.",
+  c:["Isolated showers 30 to 50 miles inland","Steady E–SE wind of 10 to 15 kt at the beaches"]},
+ {t:REG.onshore.exit,n:"Front beyond 50 miles",b:"The front has left this view. It meets the Gulf breeze, which easterly flow has pinned near the west coast, so the day’s storms favor the western half of the peninsula.",
+  c:["Storms lining up near the Gulf coast on radar","Anvil cirrus drifting back east if the upper flow is westerly"]},
+ {t:19,n:"Evening",b:"The onshore flow eases but does not reverse. Overnight, showers redevelop over the warm Atlantic and the cycle repeats.",
+  c:["E–SE wind easing after sunset","New showers offshore toward morning"]}
+]};
+function phaseIndex(t,rk){var a=PH[rk],i=0;for(var j=0;j<a.length;j++){if(t>=a[j].t-1e-6)i=j;}return i;}
+
+/* ---------- DOM ---------- */
+var $=function(id){return document.getElementById(id);};
+var stage=$("stage"), canvas=$("gl");
+var st={t:7,reg:"light",playing:true,rate:1,view:"3d"};
+var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+if(reduce){st.playing=false;st.t=13;}
+
+function isDark(){
+  var a=document.documentElement.getAttribute("data-theme");
+  if(a==="dark")return true; if(a==="light")return false;
+  return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+
+/* hour labels and flags */
+(function(){
+  var hrs=[[8,"8 AM"],[10,"10"],[12,"Noon"],[14,"2 PM"],[16,"4"],[18,"6"],[20,"8 PM"]],h=$("hours");
+  hrs.forEach(function(x){var s=document.createElement("span");s.textContent=x[1];s.style.left=((x[0]-7)/13*100)+"%";h.appendChild(s);});
+})();
+function buildFlags(){
+  var f=$("flags"),R=REG[st.reg];f.innerHTML="";
+  var ev=[{t:R.onset,l:"Onset"}];
+  if(R.tc!==null)ev.push({t:R.tc,l:"Collision"}); else if(R.exit<20)ev.push({t:R.exit,l:"Leaves view"});
+  ev.forEach(function(e){
+    var b=document.createElement("button");b.type="button";b.textContent=e.l;
+    b.title="Jump to "+fmtTime(e.t);b.style.left=((e.t-7)/13*100)+"%";
+    b.addEventListener("click",function(){setTime(e.t+0.02);});
+    f.appendChild(b);
+  });
+}
+
+/* ---------- three.js scene ---------- */
+var hasGL=!!window.THREE, renderer=null;
+if(hasGL){
+  try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true});}catch(e){hasGL=false;}
+}
+if(!hasGL){
+  var m=document.createElement("div");m.className="nogl";
+  m.textContent="The 3D view needs WebGL. Turn on hardware acceleration in your browser settings, or open this page in another browser. The timeline, readouts and station trace still work.";
+  stage.appendChild(m);canvas.style.display="none";
+}
+
+var scene,camera,PAL,labels=[],upd={};
+if(hasGL){ buildScene(); }
+
+function buildScene(){
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(34,1,1,2000);
+  var CX=-(XI_MAX+XI_MIN)/2, W=XI_MAX-XI_MIN, DZ=ZC_MAX-ZC_MIN;
+
+  var hemi=new THREE.HemisphereLight(0xffffff,0x8899a0,0.62);scene.add(hemi);
+  var sun=new THREE.DirectionalLight(0xfff4e0,0.7);scene.add(sun);
+  var sunBall=new THREE.Mesh(new THREE.SphereGeometry(3,16,12),new THREE.MeshBasicMaterial({color:0xFFCB47}));scene.add(sunBall);
+
+  /* ground */
+  function flat(x0,x1,color,y){
+    var g=new THREE.PlaneGeometry(x1-x0,DZ);g.rotateX(-Math.PI/2);
+    var mesh=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:color}));
+    mesh.position.set(-(x0+x1)/2,y||0,0);scene.add(mesh);return mesh;
+  }
+  var slab=new THREE.Mesh(new THREE.BoxGeometry(W,1.6,DZ),new THREE.MeshLambertMaterial({color:0x2A3740}));
+  slab.position.set(CX,-0.83,0);scene.add(slab);
+  flat(XI_MIN,0,0x1F6490,0);
+  flat(0,1.5,0xE2D3A3,0.04);
+  flat(1.5,5,0x3C86AD,0);
+  /* mainland with per-column color */
+  var LNX=77, lpos=new Float32Array(LNX*2*3), lcol=new Float32Array(LNX*2*3), lidx=[];
+  for(var i=0;i<LNX;i++){
+    var xi=5+(XI_MAX-5)*i/(LNX-1);
+    lpos.set([-xi,0.02,-ZC_MIN, -xi,0.02,-ZC_MAX],i*6);
+    if(i<LNX-1){var a=i*2;lidx.push(a,a+2,a+1,a+1,a+2,a+3);}
+  }
+  var lgeo=new THREE.BufferGeometry();
+  lgeo.setAttribute("position",new THREE.BufferAttribute(lpos,3));
+  lgeo.setAttribute("color",new THREE.BufferAttribute(lcol,3));
+  lgeo.setIndex(lidx);lgeo.computeVertexNormals();
+  var land=new THREE.Mesh(lgeo,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide}));scene.add(land);
+  var cCool=new THREE.Color(0x4E8B5E), cMid=new THREE.Color(0x9A9F52), cHot=new THREE.Color(0xD07F3A), cTmp=new THREE.Color();
+  upd.land=function(S,shade){
+    for(var i=0;i<LNX;i++){
+      var xi=5+(XI_MAX-5)*i/(LNX-1);
+      if(shade){
+        var k=clamp((surfT(xi,S)-24)/10,0,1);
+        if(k<0.55)cTmp.copy(cCool).lerp(cMid,k/0.55); else cTmp.copy(cMid).lerp(cHot,(k-0.55)/0.45);
+      }else cTmp.copy(cCool);
+      lcol[i*6]=lcol[i*6+3]=cTmp.r;lcol[i*6+1]=lcol[i*6+4]=cTmp.g;lcol[i*6+2]=lcol[i*6+5]=cTmp.b;
+    }
+    lgeo.attributes.color.needsUpdate=true;
+  };
+
+  /* labels */
+  function makeLabel(text,size,opts){
+    opts=opts||{};
+    var cv=document.createElement("canvas"),tex=new THREE.CanvasTexture(cv);
+    var mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,depthWrite:false});
+    var sp=new THREE.Sprite(mat);sp.renderOrder=20;
+    if(opts.center)sp.center.set(opts.center[0],opts.center[1]);
+    var L={sprite:sp,text:text,size:size,colorVar:opts.colorVar||"--ink",weight:opts.weight||600};
+    L.draw=function(){
+      var ctx=cv.getContext("2d"),fs=44,font=L.weight+" "+fs+"px 'Sofia Sans Condensed','Sofia Sans','Arial Narrow',sans-serif";
+      ctx.font=font;var w=Math.ceil(ctx.measureText(L.text).width)+16;
+      cv.width=w;cv.height=60;ctx=cv.getContext("2d");ctx.font=font;ctx.textBaseline="middle";
+      ctx.lineJoin="round";ctx.lineWidth=7;ctx.strokeStyle=cssVar("--paper");ctx.strokeText(L.text,8,32);
+      ctx.fillStyle=cssVar(L.colorVar);ctx.fillText(L.text,8,32);
+      tex.needsUpdate=true;sp.scale.set(L.size*w/60,L.size,1);
+    };
+    L.draw();labels.push(L);scene.add(sp);return L;
+  }
+  /* distance ticks on the south edge */
+  var tickMat=new THREE.MeshBasicMaterial({color:0x7d8c92});
+  var tickGeo=new THREE.BoxGeometry(0.25,0.25,2);
+  [[0,"Coast"],[10,"10 mi"],[20,"20 mi"],[30,"30 mi"],[40,"40 mi"],[50,"50 mi inland"],[-10,"10 mi offshore"]].forEach(function(d){
+    var xi=d[0]/MI, tk=new THREE.Mesh(tickGeo,tickMat);tk.position.set(-xi,0,-ZC_MIN+1);scene.add(tk);
+    var L=makeLabel(d[1],2.6,{center:[0.5,1],colorVar:"--ink-2"});L.sprite.position.set(-xi,-0.4,-ZC_MIN+3.4);
+  });
+  makeLabel("Atlantic",3.4,{center:[0.5,0],colorVar:"--ink-2"}).sprite.position.set(12,0.6,-ZC_MAX-2);
+  makeLabel("Barrier island and lagoon",2.6,{center:[0.5,0],colorVar:"--ink-2"}).sprite.position.set(-2.6,3.2,-ZC_MAX-2);
+  makeLabel("Mainland",3.4,{center:[0.5,0],colorVar:"--ink-2"}).sprite.position.set(-42,0.6,-ZC_MAX-2);
+  /* north arrow */
+  var tri=new THREE.Shape();tri.moveTo(0,3.2);tri.lineTo(1.5,-1.8);tri.lineTo(0,-0.8);tri.lineTo(-1.5,-1.8);tri.lineTo(0,3.2);
+  var arrow=new THREE.Mesh(new THREE.ShapeGeometry(tri),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));
+  arrow.rotation.x=-Math.PI/2;arrow.position.set(18,0.15,16);scene.add(arrow);
+  makeLabel("N",2.8,{center:[0.5,0]}).sprite.position.set(18,0.6,11);
+  /* height scale at the far inland corner */
+  var poleMat=new THREE.MeshBasicMaterial({color:0x7d8c92});
+  var pole=new THREE.Mesh(new THREE.BoxGeometry(0.25,15.24*VEX,0.25),poleMat);
+  pole.position.set(-XI_MAX,15.24*VEX/2,-ZC_MAX);scene.add(pole);
+  [10,20,30,40,50].forEach(function(k){
+    var y=k*0.3048*VEX, tk=new THREE.Mesh(new THREE.BoxGeometry(2,0.25,0.25),poleMat);
+    tk.position.set(-XI_MAX-1,y,-ZC_MAX);scene.add(tk);
+    makeLabel(k+",000 ft",2.6,{center:[1,0.5],colorVar:"--ink-2"}).sprite.position.set(-XI_MAX-2.6,y,-ZC_MAX);
+  });
+  /* station marker */
+  var stPole=new THREE.Mesh(new THREE.BoxGeometry(0.2,3,0.2),new THREE.MeshBasicMaterial({color:0xffffff}));
+  stPole.position.set(-STATION,1.5,-ZC_MIN-0.4);scene.add(stPole);
+  var stDot=new THREE.Mesh(new THREE.SphereGeometry(0.55,12,8),new THREE.MeshBasicMaterial({color:0xE0483A}));
+  stDot.position.set(-STATION,3.2,-ZC_MIN-0.4);scene.add(stDot);
+
+  /* air masses */
+  function makeAir(){
+    var nx=200,nz=21,nTop=nx*nz,pos=new Float32Array((nTop+nx*2)*3),idx=[];
+    for(var j=0;j<nz-1;j++)for(var i=0;i<nx-1;i++){var a=j*nx+i,b=a+1,c=a+nx,d=c+1;idx.push(a,c,b,b,c,d);}
+    for(var i2=0;i2<nx-1;i2++){var a2=nTop+i2*2;idx.push(a2,a2+2,a2+1,a2+1,a2+2,a2+3);}
+    var geo=new THREE.BufferGeometry();
+    geo.setAttribute("position",new THREE.BufferAttribute(pos,3));geo.setIndex(idx);
+    var mat=new THREE.MeshLambertMaterial({color:0x22aab5,transparent:true,opacity:0.3,side:THREE.DoubleSide,depthWrite:false});
+    var mesh=new THREE.Mesh(geo,mat);mesh.renderOrder=5;scene.add(mesh);
+    return {mesh:mesh,mat:mat,update:function(fn,S){
+      var dx=(XI_MAX-XI_MIN)/(nx-1),dz=(ZC_MAX-ZC_MIN)/(nz-1),p=0;
+      for(var j=0;j<nz;j++){var zc=ZC_MIN+j*dz;for(var i=0;i<nx;i++){
+        var xi=XI_MIN+i*dx,h=fn(xi,zc,S);
+        pos[p++]=-xi;pos[p++]=h>0.004?h*VEX+0.08:-0.5;pos[p++]=-zc;
+      }}
+      for(var k=0;k<nx;k++){
+        var x2=XI_MIN+k*dx,h2=fn(x2,ZC_MIN,S),y2=h2>0.004?h2*VEX+0.08:-0.5;
+        pos[p++]=-x2;pos[p++]=h2>0.004?0.05:-0.5;pos[p++]=-ZC_MIN;
+        pos[p++]=-x2;pos[p++]=y2;pos[p++]=-ZC_MIN;
+      }
+      geo.attributes.position.needsUpdate=true;geo.computeVertexNormals();
+    }};
+  }
+  var airE=makeAir(), airW=makeAir();
+  /* front ribbons on the ground */
+  function makeRibbon(){
+    var n=41,pos=new Float32Array(n*2*3),idx=[];
+    for(var i=0;i<n-1;i++){var a=i*2;idx.push(a,a+2,a+1,a+1,a+2,a+3);}
+    var geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.BufferAttribute(pos,3));geo.setIndex(idx);
+    var mat=new THREE.MeshBasicMaterial({color:0x1E4FA3,side:THREE.DoubleSide});
+    var mesh=new THREE.Mesh(geo,mat);scene.add(mesh);
+    return {mesh:mesh,mat:mat,update:function(fn,S){
+      for(var i=0;i<n;i++){var zc=ZC_MIN+(ZC_MAX-ZC_MIN)*i/(n-1),x=fn(zc,S);
+        pos.set([-(x-0.35),0.14,-zc,-(x+0.35),0.14,-zc],i*6);}
+      geo.attributes.position.needsUpdate=true;
+    }};
+  }
+  var ribE=makeRibbon(), ribW=makeRibbon();
+  var labE=makeLabel("Atlantic sea breeze front",3,{center:[0.5,0],colorVar:"--front",weight:700});
+  var labW=makeLabel("Gulf sea breeze front",3,{center:[0.5,0],colorVar:"--gulf",weight:700});
+  var labC=makeLabel("Sea breeze collision",3.2,{center:[0.5,0],colorVar:"--front",weight:700});
+
+  /* clouds */
+  var puffGeo=new THREE.SphereGeometry(1,14,10), cylGeo=new THREE.CylinderGeometry(1,1.12,1,14);
+  var cloudGroup=new THREE.Group();scene.add(cloudGroup);
+  var rnd=rng(20260704);
+  var cWhite=new THREE.Color(0xffffff), cGrey=new THREE.Color(0xA9B2BA);
+  function makeCloud(n,deep,flat){
+    var mat=new THREE.MeshLambertMaterial({color:0xffffff}), g=new THREE.Group(), puffs=[];
+    for(var i=0;i<n;i++){
+      var mesh=new THREE.Mesh(puffGeo,mat);g.add(mesh);
+      puffs.push({mesh:mesh,ox:(rnd()-0.5)*(flat?3.4:1.5),oz:(rnd()-0.5)*(flat?2.4:1.5),fy:flat?0:i/(n-1),r:0.8+rnd()*0.45});
+    }
+    var c={group:g,mat:mat,puffs:puffs,anvil:null,rain:null,flat:!!flat};
+    if(deep){
+      c.anvil=new THREE.Mesh(puffGeo,mat);g.add(c.anvil);
+      c.rain=new THREE.Mesh(cylGeo,new THREE.MeshBasicMaterial({color:0x5F7385,transparent:true,opacity:0.34,depthWrite:false}));
+      c.rain.renderOrder=4;g.add(c.rain);
+    }
+    cloudGroup.add(g);return c;
+  }
+  function setCloud(c,xi,zc,D,lcl,shear){
+    if(D<0.2||xi>XI_MAX+2||xi<XI_MIN){c.group.visible=false;return;}
+    c.group.visible=true;
+    var X=-xi,Z=-zc,rh=0.9+0.42*D,rv=Math.max(0.3,D*0.15),vs=c.flat?0.75:1.15;
+    for(var i=0;i<c.puffs.length;i++){
+      var p=c.puffs[i],tp=1-0.35*p.fy;
+      p.mesh.position.set(X+p.ox*rh*0.7,(lcl+rv*0.6+p.fy*Math.max(0,D-rv))*VEX,Z+p.oz*rh*0.7);
+      p.mesh.scale.set(rh*p.r*tp,rv*VEX*vs,rh*p.r*tp);
+    }
+    c.mat.color.copy(cWhite).lerp(cGrey,ss((D-4)/8)*0.6);
+    if(c.anvil){
+      var a=ss((D-9.5)/2.5);c.anvil.visible=a>0.02;
+      if(c.anvil.visible){c.anvil.position.set(X+shear*rh*1.3,(lcl+D-0.5)*VEX,Z);c.anvil.scale.set(rh*2.7*a,0.75*VEX,rh*2.2*a);}
+      c.rain.visible=D>7;
+      if(c.rain.visible){c.rain.position.set(X,lcl*VEX/2,Z);c.rain.scale.set(rh*0.75,lcl*VEX,rh*0.75);}
+    }
+  }
+  var frontE=[],frontW=[],fair=[];
+  for(var a=0;a<12;a++)frontE.push({c:makeCloud(9,true),zc:ZC_MIN+3+a*4+(rnd()-0.5)*2.4,f:0.35+0.65*rnd()});
+  frontE[2].f=1;frontE[6].f=0.95;frontE[9].f=0.9;
+  for(var b=0;b<9;b++)frontW.push({c:makeCloud(9,true),zc:ZC_MIN+4.5+b*5.2+(rnd()-0.5)*2.4,f:0.4+0.6*rnd()});
+  frontW[4].f=1;
+  for(var d=0;d<44;d++)fair.push({c:makeCloud(3,false,true),xi:7+rnd()*72,zc:ZC_MIN+2+rnd()*46,s:0.5+rnd()*0.45});
+  function slotD(D,f){return D*((0.75+0.25*f)*(1-ss((D-3)/6))+f*ss((D-3)/6));}
+  upd.clouds=function(S){
+    var sh=S.R.shear,i;
+    for(i=0;i<frontE.length;i++){var e=frontE[i];
+      if(S.xf===null){e.c.group.visible=false;continue;}
+      setCloud(e.c,xfLocal(e.zc,S)-0.3,e.zc,slotD(S.D,e.f),S.lcl,sh);}
+    for(i=0;i<frontW.length;i++){var w=frontW[i];
+      if(S.xw===null){w.c.group.visible=false;continue;}
+      setCloud(w.c,xwLocal(w.zc,S)+0.3,w.zc,slotD(S.Dw,w.f),S.lcl,sh);}
+    for(i=0;i<fair.length;i++){var q=fair[i],m=S.cu;
+      if(S.xf!==null)m*=ss((q.xi-xfLocal(q.zc,S)-2)/4);
+      if(S.xw!==null)m*=ss((xwLocal(q.zc,S)-q.xi-2)/4);
+      setCloud(q.c,q.xi,q.zc,q.s*m,S.lcl,0);}
+  };
+
+  /* wind tracers */
+  var N=stage.clientWidth<700?1500:2600;
+  var px=new Float32Array(N),ph=new Float32Array(N),pc=new Float32Array(N),age=new Float32Array(N),life=new Float32Array(N);
+  var lp=new Float32Array(N*6),lc=new Float32Array(N*6),pp=new Float32Array(N*3),pcol=new Float32Array(N*3);
+  var prnd=rng(77);
+  function spawn(i,fresh){
+    px[i]=XI_MIN+prnd()*(XI_MAX-XI_MIN);var r=prnd();ph[i]=0.03+3.4*r*r;pc[i]=ZC_MIN+prnd()*(ZC_MAX-ZC_MIN);
+    life[i]=4+prnd()*5;age[i]=fresh?prnd()*life[i]:0;
+  }
+  for(var n=0;n<N;n++)spawn(n,true);
+  var lgeoW=new THREE.BufferGeometry();
+  lgeoW.setAttribute("position",new THREE.BufferAttribute(lp,3));lgeoW.setAttribute("color",new THREE.BufferAttribute(lc,3));
+  var lines=new THREE.LineSegments(lgeoW,new THREE.LineBasicMaterial({vertexColors:true}));lines.frustumCulled=false;lines.renderOrder=6;scene.add(lines);
+  var pgeo=new THREE.BufferGeometry();
+  pgeo.setAttribute("position",new THREE.BufferAttribute(pp,3));pgeo.setAttribute("color",new THREE.BufferAttribute(pcol,3));
+  var pts=new THREE.Points(pgeo,new THREE.PointsMaterial({vertexColors:true,size:2.2,sizeAttenuation:false}));pts.frustumCulled=false;pts.renderOrder=6;scene.add(pts);
+  var V={u:0,w:0,v:0};
+  upd.tracers=function(S,dt){
+    var dtH=dt*0.4,sl=0.15,P=PAL,BG=P.cur||P.bg;
+    for(var i=0;i<N;i++){
+      age[i]+=dt;
+      if(age[i]>life[i]||px[i]<XI_MIN||px[i]>XI_MAX||ph[i]>4.2)spawn(i,false);
+      vel(px[i],ph[i],pc[i],S,V,false);
+      px[i]+=V.u*dtH;ph[i]+=V.w*dtH;pc[i]+=V.v*dtH;
+      if(ph[i]<0.02)ph[i]=0.02;
+      if(pc[i]>ZC_MAX)pc[i]-=(ZC_MAX-ZC_MIN); else if(pc[i]<ZC_MIN)pc[i]+=(ZC_MAX-ZC_MIN);
+      var X=-px[i],Y=ph[i]*VEX,Z=-pc[i],j=i*6,k=i*3;
+      lp[j]=X;lp[j+1]=Y;lp[j+2]=Z;lp[j+3]=X+V.u*sl;lp[j+4]=Y-V.w*VEX*sl;lp[j+5]=Z+V.v*sl;
+      pp[k]=X;pp[k+1]=Y;pp[k+2]=Z;
+      var s=clamp(V.u/14,-1,1),to=s>0?P.on:P.off,m=Math.abs(s),up=clamp(V.w/3,0,1)*0.6;
+      var r=P.neu.r+(to.r-P.neu.r)*m,g=P.neu.g+(to.g-P.neu.g)*m,b=P.neu.b+(to.b-P.neu.b)*m;
+      r+=(P.up.r-r)*up;g+=(P.up.g-g)*up;b+=(P.up.b-b)*up;
+      var al=Math.min(1,age[i]/0.4,(life[i]-age[i])/0.4);if(al<0)al=0;
+      r=BG.r+(r-BG.r)*al;g=BG.g+(g-BG.g)*al;b=BG.b+(b-BG.b)*al;
+      lc[j]=r;lc[j+1]=g;lc[j+2]=b;
+      lc[j+3]=BG.r+(r-BG.r)*0.45;lc[j+4]=BG.g+(g-BG.g)*0.45;lc[j+5]=BG.b+(b-BG.b)*0.45;
+      pcol[k]=r;pcol[k+1]=g;pcol[k+2]=b;
+    }
+    lgeoW.attributes.position.needsUpdate=true;lgeoW.attributes.color.needsUpdate=true;
+    pgeo.attributes.position.needsUpdate=true;pgeo.attributes.color.needsUpdate=true;
+  };
+
+  /* palette and theme */
+  var skyC=new THREE.Color(), warmC=new THREE.Color();
+  upd.theme=function(){
+    var dark=isDark();
+    PAL=dark?{bg:new THREE.Color(0x0D1A20),on:new THREE.Color(0x66DCE2),off:new THREE.Color(0xF7A650),neu:new THREE.Color(0x5F7379),up:new THREE.Color(0xffffff),warm:0x2A1E22,airE:0x3FC5CF,airW:0x5DD39E,ribE:0x86AEF5,ribW:0x62D4A0}
+            :{bg:new THREE.Color(0xDCE7E9),on:new THREE.Color(0x06656F),off:new THREE.Color(0xB04E0C),neu:new THREE.Color(0x8A979B),up:new THREE.Color(0x15252C),warm:0xEFDCC8,airE:0x1BA3B0,airW:0x2E9E6B,ribE:0x1E4FA3,ribW:0x1F8A5B};
+    airE.mat.color.setHex(PAL.airE);airW.mat.color.setHex(PAL.airW);
+    airE.mat.opacity=airW.mat.opacity=dark?0.26:0.32;
+    ribE.mat.color.setHex(PAL.ribE);ribW.mat.color.setHex(PAL.ribW);
+    labels.forEach(function(L){L.draw();});
+    hemi.intensity=dark?0.56:0.66;
+  };
+  upd.theme();
+
+  /* per-time scene update */
+  upd.scene=function(S,ly){
+    var a=Math.PI*(S.t-6.6)/13.8,el=Math.sin(a);
+    sunBall.position.set(CX+100*Math.cos(a),8+78*el,-52);
+    sun.position.set(CX+100*Math.cos(a),20+90*el,40);sun.intensity=0.18+0.3*el;
+    var eve=ss((S.t-17.8)/2)+ss((8-S.t)/1.2);
+    skyC.copy(PAL.bg);warmC.setHex(PAL.warm);skyC.lerp(warmC,0.6*eve);
+    scene.background=skyC;PAL.cur=skyC;
+    upd.land(S,ly.temp);
+    var showE=ly.air&&S.xf!==null, showW=ly.air&&S.xw!==null;
+    airE.mesh.visible=showE;if(showE)airE.update(topE,S);
+    airW.mesh.visible=showW;if(showW)airW.update(topW,S);
+    ribE.mesh.visible=S.xf!==null&&S.xf<XI_MAX;if(ribE.mesh.visible)ribE.update(xfLocal,S);
+    ribW.mesh.visible=S.xw!==null&&!S.collided;if(ribW.mesh.visible)ribW.update(xwLocal,S);
+    labE.sprite.visible=S.xf!==null&&!S.collided&&S.xf<XI_MAX-2;
+    labW.sprite.visible=S.xw!==null&&!S.collided&&S.xw<XI_MAX-6;
+    labC.sprite.visible=S.collided;
+    if(labE.sprite.visible)labE.sprite.position.set(-xfLocal(ZC_MIN,S),S.h*1.8*VEX+1.5,-ZC_MIN+0.5);
+    if(labW.sprite.visible)labW.sprite.position.set(-xwLocal(ZC_MIN,S),S.hw*1.8*VEX+5,-ZC_MIN+0.5);
+    if(labC.sprite.visible)labC.sprite.position.set(-xfLocal(ZC_MIN,S),S.h*1.8*VEX+2,-ZC_MIN+0.5);
+    cloudGroup.visible=ly.cloud;if(ly.cloud)upd.clouds(S);
+    lines.visible=pts.visible=ly.wind;
+  };
+
+  /* camera */
+  var cam={theta:0.62,phi:1.2,r:150,target:new THREE.Vector3(CX,15,0)};
+  var VIEWS={"3d":{theta:0.62,phi:1.2,r:162,ty:13},"xs":{theta:0,phi:1.5,r:118,ty:9},"map":{theta:0,phi:0.03,r:185,ty:0}};
+  var tween=null;
+  function fit(){var w=stage.clientWidth,h=stage.clientHeight;return Math.max(1,1.55/(w/Math.max(h,1)));}
+  function applyCam(){
+    var sp=Math.sin(cam.phi),cp=Math.cos(cam.phi);
+    camera.position.set(cam.target.x+cam.r*sp*Math.sin(cam.theta),cam.target.y+cam.r*cp,cam.target.z+cam.r*sp*Math.cos(cam.theta));
+    camera.lookAt(cam.target);
+  }
+  upd.setView=function(name,instant){
+    var v=VIEWS[name],to={theta:v.theta,phi:v.phi,r:v.r*fit(),tx:CX,ty:v.ty,tz:0};
+    if(instant||reduce){cam.theta=to.theta;cam.phi=to.phi;cam.r=to.r;cam.target.set(to.tx,to.ty,to.tz);tween=null;applyCam();return;}
+    tween={t0:performance.now(),from:{theta:cam.theta,phi:cam.phi,r:cam.r,tx:cam.target.x,ty:cam.target.y,tz:cam.target.z},to:to};
+  };
+  upd.camTick=function(now){
+    if(tween){
+      var k=ss((now-tween.t0)/650),f=tween.from,t=tween.to;
+      cam.theta=f.theta+(t.theta-f.theta)*k;cam.phi=f.phi+(t.phi-f.phi)*k;cam.r=f.r+(t.r-f.r)*k;
+      cam.target.set(f.tx+(t.tx-f.tx)*k,f.ty+(t.ty-f.ty)*k,f.tz+(t.tz-f.tz)*k);
+      if(k>=1)tween=null;
+    }
+    applyCam();
+  };
+  upd.resize=function(){
+    var w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+    renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  };
+  /* pointer controls */
+  var ptrs={},pinch=0;
+  function clearViewButtons(){document.querySelectorAll(".views button").forEach(function(b){b.setAttribute("aria-pressed","false");});}
+  canvas.addEventListener("contextmenu",function(e){e.preventDefault();});
+  canvas.addEventListener("pointerdown",function(e){canvas.setPointerCapture(e.pointerId);ptrs[e.pointerId]={x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey};pinch=0;tween=null;});
+  function endPtr(e){delete ptrs[e.pointerId];pinch=0;}
+  canvas.addEventListener("pointerup",endPtr);canvas.addEventListener("pointercancel",endPtr);
+  canvas.addEventListener("pointermove",function(e){
+    var p=ptrs[e.pointerId];if(!p)return;
+    var dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+    var ids=Object.keys(ptrs);
+    if(ids.length===2){
+      var a=ptrs[ids[0]],b=ptrs[ids[1]],dist=Math.hypot(a.x-b.x,a.y-b.y);
+      if(pinch>0)cam.r=clamp(cam.r*pinch/dist,35,450);
+      pinch=dist;pan(dx*0.5,dy*0.5);
+    }else if(p.b===2||p.sh){pan(dx,dy);}
+    else{cam.theta-=dx*0.005;cam.phi=clamp(cam.phi-dy*0.005,0.03,1.55);}
+    clearViewButtons();
+  });
+  function pan(dx,dy){
+    var k=cam.r*0.0013,right=new THREE.Vector3(),up=new THREE.Vector3();
+    camera.matrixWorld.extractBasis(right,up,new THREE.Vector3());
+    cam.target.addScaledVector(right,-dx*k).addScaledVector(up,dy*k);
+  }
+  canvas.addEventListener("wheel",function(e){e.preventDefault();cam.r=clamp(cam.r*Math.exp(e.deltaY*0.001),35,450);tween=null;},{passive:false});
+  canvas.tabIndex=0;canvas.setAttribute("aria-label","3D scene. Arrow keys rotate, plus and minus zoom.");
+  canvas.addEventListener("keydown",function(e){
+    var used=true;
+    if(e.key==="ArrowLeft")cam.theta-=0.08; else if(e.key==="ArrowRight")cam.theta+=0.08;
+    else if(e.key==="ArrowUp")cam.phi=clamp(cam.phi-0.06,0.03,1.55); else if(e.key==="ArrowDown")cam.phi=clamp(cam.phi+0.06,0.03,1.55);
+    else if(e.key==="+"||e.key==="=")cam.r=clamp(cam.r*0.92,35,450); else if(e.key==="-")cam.r=clamp(cam.r*1.08,35,450);
+    else used=false;
+    if(used){e.preventDefault();tween=null;clearViewButtons();}
+  });
+}
+
+/* ---------- UI ---------- */
+var layers={wind:true,air:true,cloud:true,temp:true};
+var series=null,lastMin=-1,lastPhase=-1,dirty=true;
+
+function buildSeries(){
+  var T=[],U=[],fropa=null,o={u:0,w:0,v:0};
+  for(var t=7;t<=20.001;t+=0.1){
+    var S=stateAt(t,st.reg);T.push(F(surfT(STATION,S)));
+    vel(STATION,0.02,0,S,o,true);U.push(o.u*KT);
+    if(fropa===null&&Ff(STATION,0,S)>0.5)fropa=t;
+  }
+  series={T:T,U:U,fropa:fropa};
+}
+function drawMet(){
+  var cv=$("met"),w=cv.clientWidth,h=cv.clientHeight;if(!w||!series)return;
+  var dpr=Math.min(window.devicePixelRatio||1,2);
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  var c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  var L=30,Rm=30,Tp=16,B=20,pw=w-L-Rm,phh=h-Tp-B;
+  var ink2=cssVar("--ink-2"),line=cssVar("--line"),heat=cssVar("--heat"),mar=cssVar("--marine"),ink=cssVar("--ink"),front=cssVar("--front");
+  var X=function(t){return L+(t-7)/13*pw;},YT=function(v){return Tp+(1-(v-72)/24)*phh;},YU=function(v){return Tp+(1-(v+12)/28)*phh;};
+  c.font="500 12px 'Sofia Sans Condensed','Arial Narrow',sans-serif";c.textBaseline="middle";
+  c.strokeStyle=line;c.lineWidth=1;c.fillStyle=ink2;
+  [76,84,92].forEach(function(v){c.beginPath();c.moveTo(L,YT(v));c.lineTo(L+pw,YT(v));c.stroke();c.textAlign="right";c.fillText(v,L-5,YT(v));});
+  c.textAlign="left";[-8,0,8,16].forEach(function(v){c.fillText(v,L+pw+5,YU(v));});
+  c.textAlign="center";c.textBaseline="top";
+  [[8,"8"],[10,"10"],[12,"Noon"],[14,"2"],[16,"4"],[18,"6"],[20,"8"]].forEach(function(x){c.fillText(x[1],X(x[0]),Tp+phh+5);});
+  c.setLineDash([3,3]);c.strokeStyle=ink2;c.beginPath();c.moveTo(L,YU(0));c.lineTo(L+pw,YU(0));c.stroke();c.setLineDash([]);
+  if(series.fropa!==null){
+    c.strokeStyle=front;c.setLineDash([2,3]);c.beginPath();c.moveTo(X(series.fropa),Tp);c.lineTo(X(series.fropa),Tp+phh);c.stroke();c.setLineDash([]);
+    c.fillStyle=front;c.textBaseline="alphabetic";c.textAlign=series.fropa>16?"right":"left";
+    c.fillText("Front passes "+fmtTime(series.fropa),X(series.fropa)+(series.fropa>16?-5:5),Tp-4);
+  }
+  function path(arr,Y,col){c.strokeStyle=col;c.lineWidth=2;c.lineJoin="round";c.beginPath();
+    for(var i=0;i<arr.length;i++){var x=X(7+i*0.1),y=Y(arr[i]);if(i)c.lineTo(x,y);else c.moveTo(x,y);}c.stroke();}
+  path(series.U,YU,mar);path(series.T,YT,heat);
+  c.strokeStyle=ink;c.lineWidth=1.5;c.beginPath();c.moveTo(X(st.t),Tp);c.lineTo(X(st.t),Tp+phh);c.stroke();
+}
+
+function updateUI(S){
+  $("clk").textContent=fmtTime(S.t);$("zulu").textContent="EDT, "+fmtZ(S.t);
+  var pi=phaseIndex(S.t,st.reg),p=PH[st.reg][pi];
+  if(pi!==lastPhase){
+    lastPhase=pi;$("phShort").textContent=p.n;$("phName").textContent=p.n;$("phBody").textContent=p.b;
+    var ul=$("phCues");ul.innerHTML="";p.c.forEach(function(x){var li=document.createElement("li");li.textContent=x;ul.appendChild(li);});
+  }
+  $("rT").textContent=Math.round(F(S.Tfree))+"°F";
+  var d=(S.Tfree-SST)*1.8;$("rDT").textContent=(d>=0?"+":"−")+Math.abs(d).toFixed(1)+"°F";
+  var R=S.R;
+  if(S.xf===null){$("rFront").textContent="Not formed yet";$("rSpd").textContent="–";$("rDepth").textContent="–";}
+  else{
+    $("rFront").textContent=S.xf>XI_MAX?"Past 50 mi inland":(S.xf*MI<1?"At the coast":Math.round(S.xf*MI)+" mi inland");
+    if(S.collided)$("rSpd").textContent="Merged, stalled";
+    else{var tau=Math.max(S.t-R.onset,0.05),sp=R.c*R.p*Math.pow(tau,R.p-1)*KT;$("rSpd").textContent=sp.toFixed(0)+" kt inland";}
+    $("rDepth").textContent=(Math.round(S.h*3281/100)*100).toLocaleString("en-US")+" ft";
+  }
+  var o={u:0,w:0,v:0};vel(0.5,0.02,0,S,o,true);
+  var spd=Math.hypot(o.u,o.v)*KT;
+  if(spd<1.5)$("rWind").textContent="Light, variable";
+  else{var dir=(Math.atan2(o.u,-o.v)*180/Math.PI+360)%360;$("rWind").textContent=COMPASS[Math.round(dir/22.5)%16]+" "+Math.round(spd)+" kt";}
+  var Dm=Math.max(S.xf!==null&&S.xf<XI_MAX?S.D:0,S.Dw),fairTop=S.cu>0.3&&!(S.xf!==null&&S.xf>XI_MAX)?0.9:0,top=Math.max(Dm,fairTop);
+  if(top<0.3)$("rTops").textContent="Mostly clear";
+  else{var kft=(S.lcl+top)*3.281,kind=top>=9?"Cb":(top>=3.5?"TCu":"Cu");$("rTops").textContent=kind+" to "+Math.round(kft)+",000 ft";}
+  $("rBase").textContent=(Math.round(S.lcl*3281/100)*100).toLocaleString("en-US")+" ft";
+  drawMet();
+}
+
+function setTime(t){st.t=clamp(t,7,20);dirty=true;}
+function setRegime(r){
+  st.reg=r;lastPhase=-1;dirty=true;
+  document.querySelectorAll(".regime button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.reg===r?"true":"false");});
+  $("regNote").textContent=REG[r].note;buildFlags();buildSeries();
+}
+document.querySelectorAll(".regime button").forEach(function(b){b.addEventListener("click",function(){setRegime(b.dataset.reg);});});
+document.querySelectorAll(".views button").forEach(function(b){b.addEventListener("click",function(){
+  document.querySelectorAll(".views button").forEach(function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});
+  st.view=b.dataset.view;if(hasGL)upd.setView(st.view,false);
+});});
+var playBtn=$("play"),slider=$("time");
+function syncPlay(){playBtn.textContent=st.playing?"Pause":(st.t>=20?"Replay":"Play");}
+playBtn.addEventListener("click",function(){
+  if(!st.playing&&st.t>=20)setTime(7);
+  st.playing=!st.playing;syncPlay();
+});
+slider.addEventListener("input",function(){st.playing=false;setTime(slider.value/60);syncPlay();});
+$("speed").addEventListener("change",function(e){st.rate=parseFloat(e.target.value);});
+[["lyWind","wind"],["lyAir","air"],["lyCloud","cloud"],["lyTemp","temp"]].forEach(function(p){
+  $(p[0]).addEventListener("change",function(e){layers[p[1]]=e.target.checked;dirty=true;});
+});
+
+function onTheme(){if(hasGL)upd.theme();dirty=true;}
+if(window.matchMedia){var mq=matchMedia("(prefers-color-scheme: dark)");if(mq.addEventListener)mq.addEventListener("change",onTheme);else if(mq.addListener)mq.addListener(onTheme);}
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){labels.forEach(function(L){L.draw();});dirty=true;});
+
+function onResize(){if(hasGL){upd.resize();}dirty=true;}
+if(window.ResizeObserver)new ResizeObserver(onResize).observe(stage);
+window.addEventListener("resize",onResize);
+
+setRegime("light");syncPlay();
+if(hasGL){upd.resize();upd.setView("3d",true);}
+
+var last=performance.now(),S=stateAt(st.t,st.reg);
+function frame(now){
+  var dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(st.playing){
+    st.t+=dt*st.rate/2.4;dirty=true;
+    if(st.t>=20){st.t=20;st.playing=false;syncPlay();}
+  }
+  if(dirty){
+    S=stateAt(st.t,st.reg);
+    if(hasGL)upd.scene(S,layers);
+    var mn=Math.round(st.t*60);
+    if(mn!==lastMin||!st.playing){lastMin=mn;updateUI(S);if(document.activeElement!==slider||st.playing)slider.value=mn;}
+    dirty=false;
+  }
+  if(hasGL){
+    if(layers.wind)upd.tracers(S,dt);
+    upd.camTick(now);renderer.render(scene,camera);
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
